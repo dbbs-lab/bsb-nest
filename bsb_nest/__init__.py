@@ -9,4 +9,4 @@ from . import devices
 
 
 __plugin__ = SimulationBackendPlugin(Simulation=NestSimulation, Adapter=NestAdapter)
-__version__ = "0.0.0a0"
+__version__ = "0.0.0b0"
