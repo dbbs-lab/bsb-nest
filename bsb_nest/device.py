@@ -35,13 +35,13 @@ class NestDevice(DeviceModel):
         return sum(node_collector, start=adapter.nest.NodeCollection())
 
     def connect_to_nodes(self, device, nodes):
-        import bsb_nest
+        import nest
 
         if len(nodes) == 0:
             warnings.warn(f"{self.name} has no targets")
         else:
             try:
-                bsb_nest.Connect(
+                nest.Connect(
                     device,
                     nodes,
                     syn_spec={"weight": self.weight, "delay": self.delay},
@@ -49,7 +49,7 @@ class NestDevice(DeviceModel):
             except Exception as e:
                 if "does not send output" not in str(e):
                     raise
-                bsb_nest.Connect(
+                nest.Connect(
                     nodes,
                     device,
                     syn_spec={"weight": self.weight, "delay": self.delay},

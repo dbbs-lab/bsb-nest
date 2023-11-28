@@ -9,10 +9,10 @@ class NestCell(CellModel):
     constants = config.dict(type=types.any_())
 
     def create_population(self, simdata):
-        import bsb_nest
+        import nest
 
         n = len(simdata.placement[self])
-        population = bsb_nest.Create(self.model, n) if n else bsb_nest.NodeCollection([])
+        population = nest.Create(self.model, n) if n else nest.NodeCollection([])
         self.set_constants(population)
         self.set_parameters(population, simdata)
         return population

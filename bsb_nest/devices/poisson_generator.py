@@ -8,14 +8,14 @@ class PoissonGenerator(NestDevice, classmap_entry="poisson_generator"):
     rate = config.attr(type=float, required=True)
 
     def implement(self, adapter, simulation, simdata):
-        import bsb_nest
+        import nest
 
         nodes = self.get_target_nodes(adapter, simulation, simdata)
         device = self.register_device(
-            simdata, bsb_nest.Create("poisson_generator", params={"rate": self.rate})
+            simdata, nest.Create("poisson_generator", params={"rate": self.rate})
         )
-        sr = bsb_nest.Create("spike_recorder")
-        bsb_nest.Connect(device, sr)
+        sr = nest.Create("spike_recorder")
+        nest.Connect(device, sr)
         self.connect_to_nodes(device, nodes)
 
         def recorder(segment):

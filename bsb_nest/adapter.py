@@ -22,10 +22,10 @@ if typing.TYPE_CHECKING:
 
 class NestResult(SimulationResult):
     def record(self, nc, **annotations):
-        import bsb_nest
+        import nest
 
-        recorder = bsb_nest.Create("spike_recorder", params={"record_to": "memory"})
-        bsb_nest.Connect(nc, recorder)
+        recorder = nest.Create("spike_recorder", params={"record_to": "memory"})
+        nest.Connect(nc, recorder)
 
         def flush(segment):
             events = recorder.events[0]
@@ -34,7 +34,7 @@ class NestResult(SimulationResult):
                 SpikeTrain(
                     events["times"],
                     waveforms=events["senders"],
-                    t_stop=bsb_nest.biological_time,
+                    t_stop=nest.biological_time,
                     units="ms",
                     **annotations,
                 )
@@ -52,11 +52,11 @@ class NestAdapter(SimulatorAdapter):
     @functools.cache
     def nest(self):
         report("Importing  NEST...", level=2)
-        import bsb_nest
+        import nest
 
         self.check_comm()
 
-        return bsb_nest
+        return nest
 
     def simulate(self, simulation):
         try:
@@ -181,10 +181,10 @@ class NestAdapter(SimulatorAdapter):
         self.nest.overwrite_files = True
 
     def check_comm(self):
-        import bsb_nest
+        import nest
 
-        if bsb_nest.NumProcesses() != MPI.get_size():
+        if nest.NumProcesses() != MPI.get_size():
             raise RuntimeError(
-                f"NEST is managing {bsb_nest.NumProcesses()} processes, but {MPI.get_size()}"
+                f"NEST is managing {nest.NumProcesses()} processes, but {MPI.get_size()}"
                 " were detected. Please check your MPI setup."
             )

@@ -46,9 +46,9 @@ class LazySynapseCollection:
 
     @functools.cached_property
     def collection(self):
-        import bsb_nest
+        import nest
 
-        return bsb_nest.GetConnections(self._pre, self._post)
+        return nest.GetConnections(self._pre, self._post)
 
 
 @config.dynamic(attr_name="model_strategy", required=False)
@@ -57,15 +57,15 @@ class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
     synapse = config.attr(type=NestSynapseSettings, required=True)
 
     def create_connections(self, simdata, pre_nodes, post_nodes, cs):
-        import bsb_nest
+        import nest
 
         syn_spec = self.get_syn_spec()
-        if syn_spec["synapse_model"] not in bsb_nest.synapse_models:
+        if syn_spec["synapse_model"] not in nest.synapse_models:
             raise NestConnectError(
                 f"Unknown synapse model '{syn_spec['synapse_model']}'."
             )
         if self.rule is not None:
-            bsb_nest.Connect(pre_nodes, post_nodes, self.get_conn_spec(), syn_spec)
+            nest.Connect(pre_nodes, post_nodes, self.get_conn_spec(), syn_spec)
         else:
             MPI.barrier()
             for pre_locs, post_locs in self.predict_mem_iterator(
@@ -83,7 +83,7 @@ class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
                 bw = syn_spec["weight"]
                 ssw["weight"] = [bw * m for m in multiplicity]
                 ssw["delay"] = [syn_spec["delay"]] * len(ssw["weight"])
-                bsb_nest.Connect(
+                nest.Connect(
                     [prel[x] for x in cell_pairs[:, 0]],
                     [postl[x] for x in cell_pairs[:, 1]],
                     "one_to_one",
