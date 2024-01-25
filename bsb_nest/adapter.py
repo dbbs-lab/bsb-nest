@@ -5,10 +5,11 @@ import time
 import functools
 from tqdm import tqdm
 
-from bsb.simulation.adapter import SimulatorAdapter, SimulationData
+from bsb.simulation.adapter import AdapterProgress, SimulatorAdapter, SimulationData
 from bsb.simulation.results import SimulationResult
 from bsb.reporting import report, warn
 from bsb.exceptions import (
+    AdapterError,
     KernelWarning,
     NestModuleError,
     NestModelError,
@@ -90,22 +91,25 @@ class NestAdapter(SimulatorAdapter):
         # to appropriately warn them when they load them twice.
         self.loaded_modules = set()
 
-    def run(self, simulation):
-        if simulation not in self.simdata:
-            raise RuntimeError("Can't run unprepared simulation")
+    def run(self, *simulations, comm=None):
+        unprepared = [sim for sim in simulations if sim not in self.simdata]
+        if unprepared:
+            raise AdapterError(f"Unprepared for simulations: {', '.join(unprepared)}")
         report("Simulating...", level=2)
-        tick = time.time()
-        simulation.start_progress(simulation.duration)
+        duration = max(sim.duration for sim in simulations)
+        progress = AdapterProgress(duration)
         try:
             with self.nest.RunManager():
-                for oi, i in simulation.step_progress(simulation.duration, step=1):
+                for oi, i in progress.steps(step=1):
                     self.nest.Run(i - oi)
-                    simulation.progress(i)
+                    progress.tick(i)
         finally:
-            result = self.simdata[simulation].result
-            del self.simdata[simulation]
-        report(f"Simulation done. {time.time() - tick:.2f}s elapsed.", level=2)
-        return result
+            results = [self.simdata[sim].result for sim in simulations]
+            for sim in simulations:
+                del self.simdata[sim]
+        progress.complete()
+        report(f"Simulation done.", level=2)
+        return results
 
     def load_modules(self, simulation):
         for module in simulation.modules:
