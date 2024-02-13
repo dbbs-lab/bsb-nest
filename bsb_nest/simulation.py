@@ -1,6 +1,7 @@
 from bsb import config
 from bsb.config import types
 from bsb.simulation.simulation import Simulation
+
 from .cell import NestCell
 from .connection import NestConnection
 from .device import NestDevice

@@ -1,15 +1,15 @@
 import functools
 import sys
 
+import nest
 import numpy as np
 import psutil
-from tqdm import tqdm
-
 from bsb import config
-from bsb.config import types, compose_nodes
+from bsb.config import compose_nodes, types
+from bsb.exceptions import NestConnectError
 from bsb.services import MPI
 from bsb.simulation.connection import ConnectionModel
-from bsb.exceptions import NestConnectError
+from tqdm import tqdm
 
 
 @config.node
@@ -46,8 +46,6 @@ class LazySynapseCollection:
 
     @functools.cached_property
     def collection(self):
-        import nest
-
         return nest.GetConnections(self._pre, self._post)
 
 
@@ -96,7 +94,9 @@ class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
     def predict_mem_iterator(self, pre_nodes, post_nodes, cs):
         avmem = psutil.virtual_memory().available
         predicted_all_mem = (
-            len(pre_nodes) * 8 * 2 + len(post_nodes) * 8 * 2 + len(cs) * 6 * 8 * (16 + 2)
+            len(pre_nodes) * 8 * 2
+            + len(post_nodes) * 8 * 2
+            + len(cs) * 6 * 8 * (16 + 2)
         ) * MPI.get_size()
         predicted_local_mem = predicted_all_mem / len(cs.get_local_chunks("out"))
         if predicted_local_mem > avmem / 2:

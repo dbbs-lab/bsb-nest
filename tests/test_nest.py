@@ -1,10 +1,11 @@
-from bsb.config import from_file, Configuration
+import unittest
+
+import nest
+import numpy as np
+from bsb.config import Configuration, from_file
 from bsb.core import Scaffold
 from bsb.services import MPI
-from bsb_test import RandomStorageFixture, get_test_config, NumpyTestCase
-import numpy as np
-import unittest
-import nest
+from bsb_test import NumpyTestCase, RandomStorageFixture, get_test_config
 
 
 @unittest.skipIf(MPI.get_size() > 1, "Skipped during parallel testing.")
@@ -159,8 +160,6 @@ class TestNest(
         Create an iaf_cond_alpha in NEST, and with the BSB, with a base current, and check
         spike times.
         """
-        import nest
-
         nest.ResetKernel()
         nest.resolution = 0.1
         A = nest.Create("iaf_cond_alpha", 1, params={"I_e": 260.0})

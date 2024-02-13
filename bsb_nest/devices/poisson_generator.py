@@ -1,6 +1,8 @@
-from neo import SpikeTrain
-from ..device import NestDevice
+import nest
 from bsb import config
+from neo import SpikeTrain
+
+from ..device import NestDevice
 
 
 @config.node
@@ -8,8 +10,6 @@ class PoissonGenerator(NestDevice, classmap_entry="poisson_generator"):
     rate = config.attr(type=float, required=True)
 
     def implement(self, adapter, simulation, simdata):
-        import nest
-
         nodes = self.get_target_nodes(adapter, simulation, simdata)
         device = self.register_device(
             simdata, nest.Create("poisson_generator", params={"rate": self.rate})

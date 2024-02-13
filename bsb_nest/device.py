@@ -1,7 +1,8 @@
 import warnings
 
+import nest
 from bsb import config
-from bsb.config import types, refs
+from bsb.config import refs, types
 from bsb.simulation.device import DeviceModel
 from bsb.simulation.targetting import Targetting
 
@@ -30,13 +31,12 @@ class NestDevice(DeviceModel):
             node_collector = (
                 simdata.populations[model][targets]
                 for model, targets in simdata.populations.items()
-                if not self.targetting.cell_models or model in self.targetting.cell_models
+                if not self.targetting.cell_models
+                or model in self.targetting.cell_models
             )
-        return sum(node_collector, start=adapter.nest.NodeCollection())
+        return sum(node_collector, start=nest.NodeCollection())
 
     def connect_to_nodes(self, device, nodes):
-        import nest
-
         if len(nodes) == 0:
             warnings.warn(f"{self.name} has no targets")
         else:
@@ -66,7 +66,7 @@ class ExtNestDevice(NestDevice, classmap_entry="external"):
     constants = config.dict(type=types.or_(types.number(), str))
 
     def implement(self, adapter, simulation, simdata):
-        simdata.devices[self] = device = adapter.nest.Create(
+        simdata.devices[self] = device = nest.Create(
             self.nest_model, params=self.constants
         )
         nodes = self.get_target_nodes(adapter, simdata)

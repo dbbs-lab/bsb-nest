@@ -1,21 +1,21 @@
-import sys
-from neo import SpikeTrain
-import typing
-import time
 import functools
-from tqdm import tqdm
+import sys
+import typing
 
-from bsb.simulation.adapter import AdapterProgress, SimulatorAdapter, SimulationData
-from bsb.simulation.results import SimulationResult
-from bsb.reporting import report, warn
+import nest
 from bsb.exceptions import (
     AdapterError,
     KernelWarning,
-    NestModuleError,
-    NestModelError,
     NestConnectError,
+    NestModelError,
+    NestModuleError,
 )
+from bsb.reporting import report, warn
 from bsb.services import MPI
+from bsb.simulation.adapter import AdapterProgress, SimulationData, SimulatorAdapter
+from bsb.simulation.results import SimulationResult
+from neo import SpikeTrain
+from tqdm import tqdm
 
 if typing.TYPE_CHECKING:
     from bsb.simulation import Simulation
@@ -23,8 +23,6 @@ if typing.TYPE_CHECKING:
 
 class NestResult(SimulationResult):
     def record(self, nc, **annotations):
-        import nest
-
         recorder = nest.Create("spike_recorder", params={"record_to": "memory"})
         nest.Connect(nc, recorder)
 
@@ -48,16 +46,6 @@ class NestAdapter(SimulatorAdapter):
     def __init__(self):
         self.simdata = dict()
         self.loaded_modules = set()
-
-    @property
-    @functools.cache
-    def nest(self):
-        report("Importing  NEST...", level=2)
-        import nest
-
-        self.check_comm()
-
-        return nest
 
     def simulate(self, simulation):
         try:
@@ -86,7 +74,7 @@ class NestAdapter(SimulatorAdapter):
             raise
 
     def reset_kernel(self):
-        self.nest.ResetKernel()
+        nest.ResetKernel()
         # Reset which modules we should consider explicitly loaded by the user
         # to appropriately warn them when they load them twice.
         self.loaded_modules = set()
@@ -99,9 +87,9 @@ class NestAdapter(SimulatorAdapter):
         duration = max(sim.duration for sim in simulations)
         progress = AdapterProgress(duration)
         try:
-            with self.nest.RunManager():
+            with nest.RunManager():
                 for oi, i in progress.steps(step=1):
-                    self.nest.Run(i - oi)
+                    nest.Run(i - oi)
                     progress.tick(i)
         finally:
             results = [self.simdata[sim].result for sim in simulations]
@@ -114,7 +102,7 @@ class NestAdapter(SimulatorAdapter):
     def load_modules(self, simulation):
         for module in simulation.modules:
             try:
-                self.nest.Install(module)
+                nest.Install(module)
                 self.loaded_modules.add(module)
             except Exception as e:
                 if e.errorname == "DynamicModuleManagementError":
@@ -166,10 +154,10 @@ class NestAdapter(SimulatorAdapter):
             except KeyError:
                 raise NestModelError(f"No model found for {cs.post_type}")
             try:
-                simdata.connections[
-                    connection_model
-                ] = connection_model.create_connections(
-                    simdata, pre_nodes, post_nodes, cs
+                simdata.connections[connection_model] = (
+                    connection_model.create_connections(
+                        simdata, pre_nodes, post_nodes, cs
+                    )
                 )
             except Exception as e:
                 raise NestConnectError(f"{connection_model} error during connect.")
@@ -180,13 +168,11 @@ class NestAdapter(SimulatorAdapter):
             device_model.implement(self, simulation, simdata)
 
     def set_settings(self, simulation: "Simulation"):
-        self.nest.set_verbosity(simulation.verbosity)
-        self.nest.resolution = simulation.resolution
-        self.nest.overwrite_files = True
+        nest.set_verbosity(simulation.verbosity)
+        nest.resolution = simulation.resolution
+        nest.overwrite_files = True
 
     def check_comm(self):
-        import nest
-
         if nest.NumProcesses() != MPI.get_size():
             raise RuntimeError(
                 f"NEST is managing {nest.NumProcesses()} processes, but {MPI.get_size()}"

@@ -1,3 +1,4 @@
+import nest
 from bsb import config
 from bsb.config import types
 from bsb.simulation.cell import CellModel
@@ -9,8 +10,6 @@ class NestCell(CellModel):
     constants = config.dict(type=types.any_())
 
     def create_population(self, simdata):
-        import nest
-
         n = len(simdata.placement[self])
         population = nest.Create(self.model, n) if n else nest.NodeCollection([])
         self.set_constants(population)
