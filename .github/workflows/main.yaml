@@ -34,7 +34,7 @@ jobs:
 
     - name: Install NEST
       if: steps.cache-nest.outputs.cache-hit != 'true'
-      run: .github/devops/install-nest.sh ${NEST_VERSION} /simulators/nest
+      run: .github/devops/install-nest.sh ${NEST_VERSION} $GITHUB_WORKSPACE/simulators/nest
 
     - name: Install dependencies & self
       run: |
