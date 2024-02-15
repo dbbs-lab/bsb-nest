@@ -60,7 +60,7 @@ class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
         import nest
 
         syn_spec = self.get_syn_spec()
-        if syn_spec["synapse_model"] not in nest.synapse_models:
+        if syn_spec["synapse_model"] not in nest.Models(mtype="synapses"):
             raise NestConnectError(
                 f"Unknown synapse model '{syn_spec['synapse_model']}'."
             )
