@@ -98,7 +98,7 @@ class TestNest(
         self.assertGreaterEqual(err_var, var_rate - expected_var)
 
     def test_brunel(self):
-        cfg = get_test_config("brunel.json")
+        cfg = get_test_config("brunel")
         simcfg = cfg.simulations.test_nest
 
         network = Scaffold(cfg, self.storage)
