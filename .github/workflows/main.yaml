@@ -29,7 +29,7 @@ jobs:
       id: cache-nest
       uses: actions/cache@v4
       with:
-        path: /simulators/nest
+        path: $GITHUB_WORKSPACE/simulators/nest
         key: ${{ runner.os }}-${{ matrix.python-version }}-nest
 
     - name: Install NEST
@@ -43,7 +43,6 @@ jobs:
         pip install .[test,parallel]
     - name: Run tests & coverage
       run: |
-        cat $GITHUB_WORKSPACE/simulators/nest/bin/nest_vars.sh
         source $GITHUB_WORKSPACE/simulators/nest/bin/nest_vars.sh
         coverage run -p -m unittest discover -v -s ./tests
         mpiexec -n 2 coverage run -p -m unittest discover -v -s ./tests
