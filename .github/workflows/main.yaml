@@ -24,12 +24,16 @@ jobs:
       run: |
         sudo apt update
         sudo apt install openmpi-bin libopenmpi-dev
+    - name: Verify cache paths
+      run: |
+        echo ${{ github.workspace }}/simulators/nest
+        echo $GITHUB_WORKSPACE/simulators/nest
 
     - name: Cache NEST
       id: cache-nest
       uses: actions/cache@v4
       with:
-        path: $GITHUB_WORKSPACE/simulators/nest
+        path: ${{ github.workspace }}/simulators/nest
         key: ${{ runner.os }}-${{ matrix.python-version }}-nest
 
     - name: Install NEST
@@ -46,3 +50,8 @@ jobs:
         source $GITHUB_WORKSPACE/simulators/nest/bin/nest_vars.sh
         coverage run -p -m unittest discover -v -s ./tests
         mpiexec -n 2 coverage run -p -m unittest discover -v -s ./tests
+    - name: Verify cache exists
+      run: |
+        echo ${{ github.workspace }}/simulators/nest
+        echo $GITHUB_WORKSPACE/simulators/nest
+        ls $GITHUB_WORKSPACE/simulators/nest
