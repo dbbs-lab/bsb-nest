@@ -1,24 +1,24 @@
-import functools
 import sys
 import typing
 
 import nest
-from bsb.exceptions import (
+from bsb import (
+    MPI,
     AdapterError,
-    KernelWarning,
-    NestConnectError,
-    NestModelError,
-    NestModuleError,
+    AdapterProgress,
+    SimulationData,
+    SimulationResult,
+    SimulatorAdapter,
+    report,
+    warn,
 )
-from bsb.reporting import report, warn
-from bsb.services import MPI
-from bsb.simulation.adapter import AdapterProgress, SimulationData, SimulatorAdapter
-from bsb.simulation.results import SimulationResult
 from neo import SpikeTrain
 from tqdm import tqdm
 
+from .exceptions import NestConnectError, NestModelError, NestModuleError
+
 if typing.TYPE_CHECKING:
-    from bsb.simulation import Simulation
+    from bsb import Simulation
 
 
 class NestResult(SimulationResult):

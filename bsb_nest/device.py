@@ -1,10 +1,7 @@
 import warnings
 
 import nest
-from bsb import config
-from bsb.config import refs, types
-from bsb.simulation.device import DeviceModel
-from bsb.simulation.targetting import Targetting
+from bsb import DeviceModel, Targetting, config, refs, types
 
 
 @config.node

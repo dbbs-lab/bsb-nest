@@ -1,7 +1,5 @@
 import nest
-from bsb import config
-from bsb.config import types
-from bsb.simulation.cell import CellModel
+from bsb import CellModel, config, types
 
 
 @config.node

@@ -4,12 +4,10 @@ import sys
 import nest
 import numpy as np
 import psutil
-from bsb import config
-from bsb.config import compose_nodes, types
-from bsb.exceptions import NestConnectError
-from bsb.services import MPI
-from bsb.simulation.connection import ConnectionModel
+from bsb import MPI, ConnectionModel, compose_nodes, config, types
 from tqdm import tqdm
+
+from .exceptions import NestConnectError
 
 
 @config.node

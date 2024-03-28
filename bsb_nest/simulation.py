@@ -1,6 +1,4 @@
-from bsb import config
-from bsb.config import types
-from bsb.simulation.simulation import Simulation
+from bsb import Simulation, config, types
 
 from .cell import NestCell
 from .connection import NestConnection
@@ -21,10 +19,3 @@ class NestSimulation(Simulation):
     cell_models = config.dict(type=NestCell, required=True)
     connection_models = config.dict(type=NestConnection, required=True)
     devices = config.dict(type=NestDevice, required=True)
-
-    def boot(self):
-        self.is_prepared = False
-        self.suffix = ""
-        self.multi = False
-        self.has_lock = False
-        self.global_identifier_map = {}
