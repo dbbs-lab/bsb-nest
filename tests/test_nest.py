@@ -2,7 +2,7 @@ import unittest
 
 import nest
 import numpy as np
-from bsb.config import Configuration, from_file
+from bsb.config import Configuration
 from bsb.core import Scaffold
 from bsb.services import MPI
 from bsb_test import NumpyTestCase, RandomStorageFixture, get_test_config
