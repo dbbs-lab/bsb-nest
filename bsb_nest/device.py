@@ -28,8 +28,7 @@ class NestDevice(DeviceModel):
             node_collector = (
                 simdata.populations[model][targets]
                 for model, targets in simdata.populations.items()
-                if not self.targetting.cell_models
-                or model in self.targetting.cell_models
+                if not self.targetting.cell_models or model in self.targetting.cell_models
             )
         return sum(node_collector, start=nest.NodeCollection())
 

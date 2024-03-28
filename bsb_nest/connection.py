@@ -92,9 +92,7 @@ class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
     def predict_mem_iterator(self, pre_nodes, post_nodes, cs):
         avmem = psutil.virtual_memory().available
         predicted_all_mem = (
-            len(pre_nodes) * 8 * 2
-            + len(post_nodes) * 8 * 2
-            + len(cs) * 6 * 8 * (16 + 2)
+            len(pre_nodes) * 8 * 2 + len(post_nodes) * 8 * 2 + len(cs) * 6 * 8 * (16 + 2)
         ) * MPI.get_size()
         predicted_local_mem = predicted_all_mem / len(cs.get_local_chunks("out"))
         if predicted_local_mem > avmem / 2:
