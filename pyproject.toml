@@ -41,7 +41,7 @@ profile = "black"
 known_third_party = ["nest"]
 
 [tool.bumpversion]
-current_version = "4.0.0-rc2"
+current_version = "4.0.0"
 parse = """(?x)
     (?P<major>0|[1-9]\\d*)\\.
     (?P<minor>0|[1-9]\\d*)\\.
