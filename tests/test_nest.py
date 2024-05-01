@@ -2,7 +2,7 @@ import unittest
 
 import nest
 import numpy as np
-from bsb import ConfigurationError, BootError
+from bsb import BootError, ConfigurationError
 from bsb.config import Configuration
 from bsb.core import Scaffold
 from bsb.services import MPI

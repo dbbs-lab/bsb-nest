@@ -1,7 +1,7 @@
 import nest
-from bsb import config, types, _util, ConfigurationError
-from neo import AnalogSignal
 import quantities as pq
+from bsb import ConfigurationError, _util, config, types
+from neo import AnalogSignal
 
 from ..device import NestDevice
 
