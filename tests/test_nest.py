@@ -2,6 +2,7 @@ import unittest
 
 import nest
 import numpy as np
+from bsb import ConfigurationError, BootError
 from bsb.config import Configuration
 from bsb.core import Scaffold
 from bsb.services import MPI
@@ -161,6 +162,8 @@ class TestNest(
 
         spike_times_nest = spikeA.get("events")["times"]
 
+        duration = 1000
+        resolution = 0.1
         cfg = Configuration(
             {
                 "name": "test",
@@ -181,8 +184,8 @@ class TestNest(
                 "simulations": {
                     "test": {
                         "simulator": "nest",
-                        "duration": 1000,
-                        "resolution": 0.1,
+                        "duration": duration,
+                        "resolution": resolution,
                         "cell_models": {
                             "A": {
                                 "model": "iaf_cond_alpha",
@@ -198,7 +201,17 @@ class TestNest(
                                     "strategy": "cell_model",
                                     "cell_models": ["A"],
                                 },
-                            }
+                            },
+                            "voltmeter_A": {
+                                "device": "multimeter",
+                                "delay": resolution,
+                                "properties": ["V_m"],
+                                "units": ["mV"],
+                                "targetting": {
+                                    "strategy": "cell_model",
+                                    "cell_models": ["A"],
+                                },
+                            },
                         },
                     }
                 },
@@ -209,4 +222,51 @@ class TestNest(
         netw.compile()
         results = netw.run_simulation("test")
         spike_times_bsb = results.spiketrains[0]
+        membrane_potentials = results.analogsignals[0]
+        # last time point is not recorded because of recorder delay.
+        self.assertTrue(len(membrane_potentials) == duration / resolution - 1)
+        defaults = nest.GetDefaults("iaf_cond_alpha")
+        # since current injected is positive, the V_m should be clamped between default
+        # initial V_m = -70mV and spike threshold V_th = -55 mV
+        self.assertAll(
+            (membrane_potentials <= defaults["V_th"])
+            * (membrane_potentials >= defaults["V_m"])
+        )
         self.assertClose(np.array(spike_times_nest), np.array(spike_times_bsb))
+
+    def test_multimeter_errors(self):
+        cfg = get_test_config("gif_pop_psc_exp")
+        sim_cfg = cfg.simulations.test_nest
+        sim_cfg.devices.update(
+            {
+                "voltmeter": {
+                    "device": "multimeter",
+                    "delay": 0.1,
+                    "properties": ["V_m", "I_syn"],
+                    "units": ["mV"],
+                    "targetting": {
+                        "strategy": "cell_model",
+                        "cell_models": ["gif_pop_psc_exp"],
+                    },
+                },
+            }
+        )
+        with self.assertRaises(BootError):
+            Scaffold(cfg, self.storage)
+
+        sim_cfg.devices.update(
+            {
+                "voltmeter": {
+                    "device": "multimeter",
+                    "delay": 0.1,
+                    "properties": ["V_m"],
+                    "units": ["bla"],
+                    "targetting": {
+                        "strategy": "cell_model",
+                        "cell_models": ["gif_pop_psc_exp"],
+                    },
+                },
+            }
+        )
+        with self.assertRaises(ConfigurationError):
+            Scaffold(cfg, self.storage)
