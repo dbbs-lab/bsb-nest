@@ -20,7 +20,9 @@ class PoissonGenerator(NestDevice, classmap_entry="poisson_generator"):
         params = {"rate": self.rate, "start": self.start}
         if self.stop is not None and self.stop > self.start:
             params["stop"] = self.stop
-        device = self.register_device(simdata, nest.Create("poisson_generator", params=params))
+        device = self.register_device(
+            simdata, nest.Create("poisson_generator", params=params)
+        )
         sr = nest.Create("spike_recorder")
         nest.Connect(device, sr)
         self.connect_to_nodes(device, nodes)
