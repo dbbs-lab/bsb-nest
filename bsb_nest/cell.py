@@ -1,11 +1,13 @@
 import nest
-from bsb import CellModel, config, types
+from bsb import CellModel, config
+
+from .distributions import nest_parameter
 
 
 @config.node
 class NestCell(CellModel):
     model = config.attr(type=str, default="iaf_psc_alpha")
-    constants = config.dict(type=types.any_())
+    constants = config.dict(type=nest_parameter())
 
     def create_population(self, simdata):
         n = len(simdata.placement[self])
