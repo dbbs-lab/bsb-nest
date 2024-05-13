@@ -2,6 +2,7 @@ import unittest
 
 import nest
 import numpy as np
+from bsb import CastError
 from bsb.config import Configuration
 from bsb.core import Scaffold
 from bsb.services import MPI
@@ -210,3 +211,90 @@ class TestNest(
         results = netw.run_simulation("test")
         spike_times_bsb = results.spiketrains[0]
         self.assertClose(np.array(spike_times_nest), np.array(spike_times_bsb))
+
+    def test_nest_randomness(self):
+        nest.ResetKernel()
+        nest.resolution = 0.1
+        nest.rng_seed = 1234
+        # gif_cond_exp implements a random spiking process.
+        # So it's perfect to test the seed
+        A = nest.Create(
+            "gif_cond_exp",
+            1,
+            params={"I_e": 200.0, "V_m": nest.random.normal(mean=-70, std=20.0)},
+        )
+        spikeA = nest.Create("spike_recorder")
+        nest.Connect(A, spikeA)
+        nest.Simulate(1000.0)
+        spike_times_nest = spikeA.get("events")["times"]
+        print(spike_times_nest)
+
+        conf = {
+            "name": "test",
+            "storage": {"engine": "hdf5"},
+            "network": {"x": 1, "y": 1, "z": 1},
+            "partitions": {"B": {"type": "layer", "thickness": 1}},
+            "cell_types": {"A": {"spatial": {"radius": 1, "count": 1}}},
+            "placement": {
+                "placement_A": {
+                    "strategy": "bsb.placement.strategy.FixedPositions",
+                    "cell_types": ["A"],
+                    "partitions": ["B"],
+                    "positions": [[1, 1, 1]],
+                }
+            },
+            "connectivity": {},
+            "after_connectivity": {},
+            "simulations": {
+                "test": {
+                    "simulator": "nest",
+                    "duration": 1000,
+                    "resolution": 0.1,
+                    "seed": 1234,
+                    "cell_models": {
+                        "A": {
+                            "model": "gif_cond_exp",
+                            "constants": {
+                                "I_e": 200.0,
+                                "V_m": {
+                                    "distribution": "normal",
+                                    "mean": -70,
+                                    "std": 20.0,
+                                },
+                            },
+                        }
+                    },
+                    "connection_models": {},
+                    "devices": {
+                        "record_A_spikes": {
+                            "device": "spike_recorder",
+                            "delay": 0.5,
+                            "targetting": {
+                                "strategy": "cell_model",
+                                "cell_models": ["A"],
+                            },
+                        }
+                    },
+                }
+            },
+        }
+        cfg = Configuration(conf)
+        netw = Scaffold(cfg, self.storage)
+        netw.compile()
+        results = netw.run_simulation("test")
+        spike_times_bsb = results.spiketrains[0]
+        self.assertClose(np.array(spike_times_nest), np.array(spike_times_bsb))
+        self.assertEqual(
+            cfg.__tree__()["simulations"]["test"]["cell_models"]["A"]["constants"]["V_m"],
+            {
+                "distribution": "normal",
+                "mean": -70,
+                "std": 20.0,
+            },
+        )
+        # Test with an unknown distribution
+        conf["simulations"]["test"]["cell_models"]["A"]["constants"]["V_m"][
+            "distribution"
+        ] = "bean"
+        with self.assertRaises(CastError):
+            _ = Configuration(conf)
