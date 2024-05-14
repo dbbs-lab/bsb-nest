@@ -297,4 +297,4 @@ class TestNest(
             "distribution"
         ] = "bean"
         with self.assertRaises(CastError):
-            _ = Configuration(conf)
+            Configuration(conf)

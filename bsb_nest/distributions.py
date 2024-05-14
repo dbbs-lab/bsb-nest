@@ -37,7 +37,7 @@ class NestRandomDistribution:
         return self._distr
 
     def __getattr__(self, attr):
-        if "_distr" not in self.__dict__:
+        if not hasattr(self, "_distr"):
             raise AttributeError("No underlying _distr found for distribution node.")
         return getattr(self._distr, attr)
 
@@ -55,7 +55,7 @@ class nest_parameter(TypeHandler):
 
     @property
     def __name__(self):  # pragma: nocover
-        return "nest_parameter"
+        return "nest parameter"
 
     def __inv__(self, value):
         return value
