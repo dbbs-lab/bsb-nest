@@ -37,7 +37,8 @@ class NestRandomDistribution:
         return self._distr
 
     def __getattr__(self, attr):
-        if not hasattr(self, "_distr"):
+        # hasattr does not work here. So we use __dict__
+        if "_distr" not in self.__dict__:
             raise AttributeError("No underlying _distr found for distribution node.")
         return getattr(self._distr, attr)
 
