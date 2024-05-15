@@ -45,6 +45,7 @@ class Multimeter(NestDevice, classmap_entry="multimeter"):
                         units=pq.units.__dict__[unit],
                         sampling_period=self.simulation.resolution * pq.ms,
                         name=self.name,
+                        senders=device.events["senders"],
                     )
                 )
 
