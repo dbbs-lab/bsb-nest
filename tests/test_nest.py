@@ -272,3 +272,76 @@ class TestNest(
         )
         with self.assertRaises(ConfigurationError):
             Scaffold(cfg, self.storage)
+
+    def test_dc_generator(self):
+        duration = 100
+        resolution = 0.1
+        cfg = Configuration(
+            {
+                "name": "test",
+                "storage": {"engine": "hdf5"},
+                "network": {"x": 1, "y": 1, "z": 1},
+                "partitions": {"B": {"type": "layer", "thickness": 1}},
+                "cell_types": {"A": {"spatial": {"radius": 1, "count": 1}}},
+                "placement": {
+                    "placement_A": {
+                        "strategy": "bsb.placement.strategy.FixedPositions",
+                        "cell_types": ["A"],
+                        "partitions": ["B"],
+                        "positions": [[1, 1, 1]],
+                    }
+                },
+                "connectivity": {},
+                "after_connectivity": {},
+                "simulations": {
+                    "test": {
+                        "simulator": "nest",
+                        "duration": duration,
+                        "resolution": resolution,
+                        "cell_models": {
+                            "A": {
+                                "model": "iaf_cond_alpha",
+                                "constants": {
+                                    "V_reset": -70,  # V_m, E_L and V_reset are the same
+                                },
+                            }
+                        },
+                        "connection_models": {},
+                        "devices": {
+                            "dc_generator": {
+                                "device": "dc_generator",
+                                "delay": resolution,
+                                "weight": 1.0,
+                                "amplitude": 200,  # Low enough so the neuron does not spike
+                                "start": 50,
+                                "stop": 60,
+                                "targetting": {
+                                    "strategy": "cell_model",
+                                    "cell_models": ["A"],
+                                },
+                            },
+                            "voltmeter_A": {
+                                "device": "multimeter",
+                                "delay": resolution,
+                                "properties": ["V_m"],
+                                "units": ["mV"],
+                                "targetting": {
+                                    "strategy": "cell_model",
+                                    "cell_models": ["A"],
+                                },
+                            },
+                        },
+                    }
+                },
+            }
+        )
+
+        netw = Scaffold(cfg, self.storage)
+        netw.compile()
+        results = netw.run_simulation("test")
+        v_ms = np.array(results.analogsignals[0])[:, 0]
+        self.assertAll(v_ms[: int(50 / resolution) + 1] == -70)
+        self.assertAll(
+            v_ms[int(50 / resolution) + 1 : int(60 / resolution) + 1] > -70,
+            "Current injected should raise membrane potential",
+        )
