@@ -15,10 +15,10 @@ from bsb import (
 from neo import SpikeTrain
 from tqdm import tqdm
 
-from .exceptions import NestConnectError, NestModelError, NestModuleError
+from .exceptions import KernelWarning, NestConnectError, NestModelError, NestModuleError
 
 if typing.TYPE_CHECKING:
-    from bsb import Simulation
+    from .simulation import NestSimulation
 
 
 class NestResult(SimulationResult):
@@ -167,10 +167,12 @@ class NestAdapter(SimulatorAdapter):
         for device_model in simulation.devices.values():
             device_model.implement(self, simulation, simdata)
 
-    def set_settings(self, simulation: "Simulation"):
+    def set_settings(self, simulation: "NestSimulation"):
         nest.set_verbosity(simulation.verbosity)
         nest.resolution = simulation.resolution
         nest.overwrite_files = True
+        if simulation.seed is not None:
+            nest.rng_seed = simulation.seed
 
     def check_comm(self):
         if nest.NumProcesses() != MPI.get_size():
