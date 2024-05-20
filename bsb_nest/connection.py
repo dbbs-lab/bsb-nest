@@ -7,6 +7,7 @@ import psutil
 from bsb import MPI, ConnectionModel, compose_nodes, config, types
 from tqdm import tqdm
 
+from .distributions import nest_parameter
 from .exceptions import NestConnectError
 
 
@@ -16,7 +17,7 @@ class NestSynapseSettings:
     weight = config.attr(type=float, required=True)
     delay = config.attr(type=float, required=True)
     receptor_type = config.attr(type=int)
-    constants = config.catch_all(type=types.any_())
+    constants = config.catch_all(type=nest_parameter())
 
 
 @config.node
