@@ -9,7 +9,7 @@ readme = "README.md"
 license = {file = "LICENSE"}
 classifiers = ["License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"]
 dynamic = ["version", "description"]
-dependencies = ["bsb-core~=4.0"]
+dependencies = ["bsb-core~=4.1"]
 
 [tool.flit.module]
 name = "bsb_nest"
