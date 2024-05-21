@@ -14,10 +14,13 @@ class NestRule:
 @config.dynamic(attr_name="device", auto_classmap=True, default="external")
 class NestDevice(DeviceModel):
     weight = config.attr(type=float, required=True)
+    """weight of the connection between the device and its target"""
     delay = config.attr(type=float, required=True)
+    """delay of the transmission between the device and its target"""
     targetting = config.attr(
         type=types.or_(Targetting, NestRule), default=dict, call_default=True
     )
+    """Targets of the device, which should be either a population or a nest rule"""
 
     def get_target_nodes(self, adapter, simulation, simdata):
         if isinstance(self.targetting, Targetting):
