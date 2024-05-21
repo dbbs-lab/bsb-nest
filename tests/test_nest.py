@@ -361,7 +361,6 @@ class TestNest(
         nest.Connect(A, spikeA)
         nest.Simulate(1000.0)
         spike_times_nest = spikeA.get("events")["times"]
-        print(spike_times_nest)
 
         conf = {
             "name": "test",
@@ -426,9 +425,46 @@ class TestNest(
                 "std": 20.0,
             },
         )
-        # Test with an unknown distribution
-        conf["simulations"]["test"]["cell_models"]["A"]["constants"]["V_m"][
-            "distribution"
-        ] = "bean"
+
+    def test_unknown_distribution(self):
+        conf = {
+            "name": "test",
+            "storage": {"engine": "hdf5"},
+            "network": {"x": 1, "y": 1, "z": 1},
+            "partitions": {"B": {"type": "layer", "thickness": 1}},
+            "cell_types": {"A": {"spatial": {"radius": 1, "count": 1}}},
+            "placement": {
+                "placement_A": {
+                    "strategy": "bsb.placement.strategy.FixedPositions",
+                    "cell_types": ["A"],
+                    "partitions": ["B"],
+                    "positions": [[1, 1, 1]],
+                }
+            },
+            "connectivity": {},
+            "after_connectivity": {},
+            "simulations": {
+                "test": {
+                    "simulator": "nest",
+                    "duration": 1000,
+                    "resolution": 0.1,
+                    "cell_models": {
+                        "A": {
+                            "model": "gif_cond_exp",
+                            "constants": {
+                                "I_e": 200.0,
+                                "V_m": {
+                                    "distribution": "bean",
+                                    "mean": -70,
+                                    "std": 20.0,
+                                },
+                            },
+                        }
+                    },
+                    "connection_models": {},
+                    "devices": {},
+                }
+            },
+        }
         with self.assertRaises(CastError):
             Configuration(conf)
