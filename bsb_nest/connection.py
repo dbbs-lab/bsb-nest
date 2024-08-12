@@ -97,7 +97,11 @@ class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
         predicted_all_mem = (
             len(pre_nodes) * 8 * 2 + len(post_nodes) * 8 * 2 + len(cs) * 6 * 8 * (16 + 2)
         ) * MPI.get_size()
-        predicted_local_mem = (predicted_all_mem / len(cs.get_local_chunks("out"))) if len(cs.get_local_chunks("out")) > 0 else 0.
+        predicted_local_mem = (
+            (predicted_all_mem / len(cs.get_local_chunks("out")))
+            if len(cs.get_local_chunks("out")) > 0
+            else 0.0
+        )
         if predicted_local_mem > avmem / 2:
             # Iterate block-by-block
             return self.block_iterator(cs)
