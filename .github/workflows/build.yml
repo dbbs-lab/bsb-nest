@@ -39,7 +39,7 @@ jobs:
       run: |
         pip install --upgrade pip
         # Install self, with test dependencies
-        pip install .[test, parallel]
+        pip install .[test,parallel]
 
     - name: Run tests & coverage
       run: |
