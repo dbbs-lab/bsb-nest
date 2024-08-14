@@ -1,13 +1,12 @@
 name: Test BSB NEST adapter
 
-on: [push, pull_request]
+on: [workflow_call]
 
 env:
   NEST_VERSION: 3.6
 
 jobs:
   build:
-    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -40,7 +39,8 @@ jobs:
       run: |
         pip install --upgrade pip
         # Install self, with test dependencies
-        pip install .[test,parallel]
+        pip install .[test]
+
     - name: Run tests & coverage
       run: |
         source ${{ github.workspace }}/simulators/nest/bin/nest_vars.sh
