@@ -69,6 +69,8 @@ class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
                 pre_nodes, post_nodes, cs
             ):
                 MPI.barrier()
+                if len(pre_locs) == 0 or len(post_locs) == 0:
+                    continue
                 cell_pairs, multiplicity = np.unique(
                     np.column_stack((pre_locs[:, 0], post_locs[:, 0])),
                     return_counts=True,
@@ -95,7 +97,8 @@ class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
         predicted_all_mem = (
             len(pre_nodes) * 8 * 2 + len(post_nodes) * 8 * 2 + len(cs) * 6 * 8 * (16 + 2)
         ) * MPI.get_size()
-        predicted_local_mem = predicted_all_mem / len(cs.get_local_chunks("out"))
+        n_chunks = len(cs.get_local_chunks("out"))
+        predicted_local_mem = (predicted_all_mem / n_chunks) if n_chunks > 0 else 0.0
         if predicted_local_mem > avmem / 2:
             # Iterate block-by-block
             return self.block_iterator(cs)

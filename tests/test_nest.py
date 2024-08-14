@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 
 import nest
 import numpy as np
@@ -97,6 +98,18 @@ class TestNest(
 
         self.assertGreaterEqual(err_mean, abs(mean_rate - expected_rate))
         self.assertGreaterEqual(err_var, var_rate - expected_var)
+
+    @patch("bsb_hdf5.connectivity_set.ConnectivitySet.get_local_chunks")
+    def test_regression_issue_9(self, get_content_mock):
+        # Override get_local_chunks to test empty connection sets
+        get_content_mock.return_value = []
+        cfg = get_test_config("gif_pop_psc_exp")
+        # we delete the NEST connectivity rule
+        cfg.simulations["test_nest"].connection_models["gif_pop_psc_exp"].rule = None
+        network = Scaffold(cfg, self.storage)
+        network.compile()
+        # The simulation should run despite the absence of connections
+        network.run_simulation("test_nest")
 
     def test_brunel(self):
         cfg = get_test_config("brunel")
