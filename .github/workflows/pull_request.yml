@@ -16,6 +16,8 @@ jobs:
     uses: ./.github/workflows/build.yml
   validate-pr-title:
     runs-on: ubuntu-latest
+    permissions: 
+      pull_requests: write
     steps:
       - name: PR Conventional Commit Validation
         uses:  ytanikin/PRConventionalCommits@1.2.0
