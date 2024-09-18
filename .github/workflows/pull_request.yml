@@ -5,6 +5,15 @@ on:
     types: [opened, synchronize, reopened, edited]
 
 jobs:
+  isort:
+    if: github.event.pull_request.head.repo.full_name != github.repository
+    uses: ./.github/workflows/isort.yml
+  black:
+    if: github.event.pull_request.head.repo.full_name != github.repository
+    uses: ./.github/workflows/black.yml
+  build:
+    if: github.event.pull_request.head.repo.full_name != github.repository
+    uses: ./.github/workflows/build.yml
   validate-pr-title:
     runs-on: ubuntu-latest
     steps:
