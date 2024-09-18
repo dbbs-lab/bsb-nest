@@ -21,6 +21,7 @@ class NestDevice(DeviceModel):
         type=types.or_(Targetting, NestRule), default=dict, call_default=True
     )
     """Targets of the device, which should be either a population or a nest rule"""
+    receptor_type = config.attr(type=int, required=False, default=0)
 
     def get_target_nodes(self, adapter, simulation, simdata):
         if isinstance(self.targetting, Targetting):
@@ -41,10 +42,11 @@ class NestDevice(DeviceModel):
         else:
             try:
                 nest.Connect(
-                    device,
-                    nodes,
-                    syn_spec={"weight": self.weight, "delay": self.delay},
+                        device,
+                        nodes,
+                        syn_spec={"weight": self.weight, "delay": self.delay, "receptor_type": self.receptor_type},
                 )
+
             except Exception as e:
                 if "does not send output" not in str(e):
                     raise
@@ -70,3 +72,4 @@ class ExtNestDevice(NestDevice, classmap_entry="external"):
         )
         nodes = self.get_target_nodes(adapter, simdata)
         self.connect_to_nodes(device, nodes)
+
