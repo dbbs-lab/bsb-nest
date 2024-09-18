@@ -1,10 +1,14 @@
 import nest
 from bsb import config
 from neo import SpikeTrain
+
 from ..device import NestDevice
 
+
 @config.node
-class SinusoidalPoissonGenerator(NestDevice, classmap_entry="sinusoidal_poisson_generator"):
+class SinusoidalPoissonGenerator(
+    NestDevice, classmap_entry="sinusoidal_poisson_generator"
+):
     rate = config.attr(type=float, required=True)
     """Rate of the poisson generator"""
     amplitude = config.attr(type=float, required=True)
@@ -21,8 +25,13 @@ class SinusoidalPoissonGenerator(NestDevice, classmap_entry="sinusoidal_poisson_
 
     def implement(self, adapter, simulation, simdata):
         nodes = self.get_target_nodes(adapter, simulation, simdata)
-        params = {"rate": self.rate, "start": self.start, "amplitude": self.amplitude, "frequency": self.frequency,
-                  "phase": self.phase}
+        params = {
+            "rate": self.rate,
+            "start": self.start,
+            "amplitude": self.amplitude,
+            "frequency": self.frequency,
+            "phase": self.phase,
+        }
         if self.stop is not None and self.stop > self.start:
             params["stop"] = self.stop
         device = self.register_device(

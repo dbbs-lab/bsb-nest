@@ -42,9 +42,13 @@ class NestDevice(DeviceModel):
         else:
             try:
                 nest.Connect(
-                        device,
-                        nodes,
-                        syn_spec={"weight": self.weight, "delay": self.delay, "receptor_type": self.receptor_type},
+                    device,
+                    nodes,
+                    syn_spec={
+                        "weight": self.weight,
+                        "delay": self.delay,
+                        "receptor_type": self.receptor_type,
+                    },
                 )
 
             except Exception as e:
@@ -72,4 +76,3 @@ class ExtNestDevice(NestDevice, classmap_entry="external"):
         )
         nodes = self.get_target_nodes(adapter, simdata)
         self.connect_to_nodes(device, nodes)
-
