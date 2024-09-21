@@ -24,20 +24,20 @@ jobs:
   isort:
     needs: variables
     # if PR is external, trigger the tests on push or new PR
-    if: ${{ !needs.variables.outputs.LOCAL_PR && needs.variables.outputs.TEST_TRIGGER }}
+    if: ${{ needs.variables.outputs.LOCAL_PR == 'false' && needs.variables.outputs.TEST_TRIGGER == 'true' }}
     uses: ./.github/workflows/isort.yml
   black:
     needs: variables
-    if: ${{ !needs.variables.outputs.LOCAL_PR && needs.variables.outputs.TEST_TRIGGER }}
+    if: ${{ needs.variables.outputs.LOCAL_PR == 'false' && needs.variables.outputs.TEST_TRIGGER == 'true' }}
     uses: ./.github/workflows/black.yml
   build:
     needs: variables
-    if: ${{ !needs.variables.outputs.LOCAL_PR && needs.variables.outputs.TEST_TRIGGER }}
+    if: ${{ needs.variables.outputs.LOCAL_PR == 'false' && needs.variables.outputs.TEST_TRIGGER == 'true' }}
     uses: ./.github/workflows/build.yml
   validate-pr-title:
     needs: variables
     # Trigger only for local PR when PR is edited (title, description, etc.)
-    if: ${{ needs.variables.outputs.LOCAL_PR && github.event.action == 'edited' }}
+    if: ${{ needs.variables.outputs.LOCAL_PR == 'true' && github.event.action == 'edited' }}
     runs-on: ubuntu-latest
     steps:
       - name: PR Conventional Commit Validation
