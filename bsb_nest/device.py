@@ -22,6 +22,7 @@ class NestDevice(DeviceModel):
     )
     """Targets of the device, which should be either a population or a nest rule"""
     receptor_type = config.attr(type=int, required=False, default=0)
+    """Integer ID of the postsynaptic target receptor"""
 
     def get_target_nodes(self, adapter, simulation, simdata):
         if isinstance(self.targetting, Targetting):

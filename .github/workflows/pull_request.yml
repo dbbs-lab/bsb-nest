@@ -4,18 +4,24 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, edited]
 
+env:
+  LOCAL_PR: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+  TEST_TRIGGER: ${{ github.event.action == 'synchronize' || github.event.action == 'opened' || github.event.action == 'reopened'}}
+
 jobs:
   isort:
-    if: github.event.pull_request.head.repo.full_name != github.repository
+    # if PR is external, trigger the tests on push or new PR
+    if: ${{ !env.LOCAL_PR && env.TEST_TRIGGER }}
     uses: ./.github/workflows/isort.yml
   black:
-    if: github.event.pull_request.head.repo.full_name != github.repository
+    if: ${{ !env.LOCAL_PR && env.TEST_TRIGGER }}
     uses: ./.github/workflows/black.yml
   build:
-    if: github.event.pull_request.head.repo.full_name != github.repository
+    if: ${{ !env.LOCAL_PR && env.TEST_TRIGGER }}
     uses: ./.github/workflows/build.yml
   validate-pr-title:
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    # Trigger only for local PR when PR is edited (title, description, etc.)
+    if: ${{ env.LOCAL_PR && github.event.action == 'edited' }}
     runs-on: ubuntu-latest
     steps:
       - name: PR Conventional Commit Validation
