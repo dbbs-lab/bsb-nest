@@ -8,6 +8,30 @@ from bsb.config import Configuration
 from bsb.core import Scaffold
 from bsb.services import MPI
 from bsb_test import NumpyTestCase, RandomStorageFixture, get_test_config
+from nest.lib.hl_api_exceptions import NESTErrors
+
+
+def _conf_single_cell():
+    return Configuration(
+        {
+            "name": "test",
+            "storage": {"engine": "hdf5"},
+            "network": {"x": 1, "y": 1, "z": 1},
+            "partitions": {"B": {"type": "layer", "thickness": 1}},
+            "cell_types": {"A": {"spatial": {"radius": 1, "count": 1}}},
+            "placement": {
+                "placement_A": {
+                    "strategy": "bsb.placement.strategy.FixedPositions",
+                    "cell_types": ["A"],
+                    "partitions": ["B"],
+                    "positions": [[1, 1, 1]],
+                }
+            },
+            "connectivity": {},
+            "after_connectivity": {},
+            "simulations": {},
+        }
+    )
 
 
 @unittest.skipIf(MPI.get_size() > 1, "Skipped during parallel testing.")
@@ -177,60 +201,41 @@ class TestNest(
 
         duration = 1000
         resolution = 0.1
-        cfg = Configuration(
-            {
-                "name": "test",
-                "storage": {"engine": "hdf5"},
-                "network": {"x": 1, "y": 1, "z": 1},
-                "partitions": {"B": {"type": "layer", "thickness": 1}},
-                "cell_types": {"A": {"spatial": {"radius": 1, "count": 1}}},
-                "placement": {
-                    "placement_A": {
-                        "strategy": "bsb.placement.strategy.FixedPositions",
-                        "cell_types": ["A"],
-                        "partitions": ["B"],
-                        "positions": [[1, 1, 1]],
+        cfg = _conf_single_cell()
+        cfg.simulations = {
+            "test": {
+                "simulator": "nest",
+                "duration": duration,
+                "resolution": resolution,
+                "cell_models": {
+                    "A": {
+                        "model": "iaf_cond_alpha",
+                        "constants": {"I_e": 260.0},
                     }
                 },
-                "connectivity": {},
-                "after_connectivity": {},
-                "simulations": {
-                    "test": {
-                        "simulator": "nest",
-                        "duration": duration,
-                        "resolution": resolution,
-                        "cell_models": {
-                            "A": {
-                                "model": "iaf_cond_alpha",
-                                "constants": {"I_e": 260.0},
-                            }
+                "connection_models": {},
+                "devices": {
+                    "record_A_spikes": {
+                        "device": "spike_recorder",
+                        "delay": 0.5,
+                        "targetting": {
+                            "strategy": "cell_model",
+                            "cell_models": ["A"],
                         },
-                        "connection_models": {},
-                        "devices": {
-                            "record_A_spikes": {
-                                "device": "spike_recorder",
-                                "delay": 0.5,
-                                "targetting": {
-                                    "strategy": "cell_model",
-                                    "cell_models": ["A"],
-                                },
-                            },
-                            "voltmeter_A": {
-                                "device": "multimeter",
-                                "delay": resolution,
-                                "properties": ["V_m"],
-                                "units": ["mV"],
-                                "targetting": {
-                                    "strategy": "cell_model",
-                                    "cell_models": ["A"],
-                                },
-                            },
+                    },
+                    "voltmeter_A": {
+                        "device": "multimeter",
+                        "delay": resolution,
+                        "properties": ["V_m"],
+                        "units": ["mV"],
+                        "targetting": {
+                            "strategy": "cell_model",
+                            "cell_models": ["A"],
                         },
-                    }
+                    },
                 },
             }
-        )
-
+        }
         netw = Scaffold(cfg, self.storage)
         netw.compile()
         results = netw.run_simulation("test")
@@ -289,66 +294,47 @@ class TestNest(
     def test_dc_generator(self):
         duration = 100
         resolution = 0.1
-        cfg = Configuration(
-            {
-                "name": "test",
-                "storage": {"engine": "hdf5"},
-                "network": {"x": 1, "y": 1, "z": 1},
-                "partitions": {"B": {"type": "layer", "thickness": 1}},
-                "cell_types": {"A": {"spatial": {"radius": 1, "count": 1}}},
-                "placement": {
-                    "placement_A": {
-                        "strategy": "bsb.placement.strategy.FixedPositions",
-                        "cell_types": ["A"],
-                        "partitions": ["B"],
-                        "positions": [[1, 1, 1]],
+        cfg = _conf_single_cell()
+        cfg.simulations = {
+            "test": {
+                "simulator": "nest",
+                "duration": duration,
+                "resolution": resolution,
+                "cell_models": {
+                    "A": {
+                        "model": "iaf_cond_alpha",
+                        "constants": {
+                            "V_reset": -70,  # V_m, E_L and V_reset are the same
+                        },
                     }
                 },
-                "connectivity": {},
-                "after_connectivity": {},
-                "simulations": {
-                    "test": {
-                        "simulator": "nest",
-                        "duration": duration,
-                        "resolution": resolution,
-                        "cell_models": {
-                            "A": {
-                                "model": "iaf_cond_alpha",
-                                "constants": {
-                                    "V_reset": -70,  # V_m, E_L and V_reset are the same
-                                },
-                            }
+                "connection_models": {},
+                "devices": {
+                    "dc_generator": {
+                        "device": "dc_generator",
+                        "delay": resolution,
+                        "weight": 1.0,
+                        "amplitude": 200,  # Low enough so the neuron does not spike
+                        "start": 50,
+                        "stop": 60,
+                        "targetting": {
+                            "strategy": "cell_model",
+                            "cell_models": ["A"],
                         },
-                        "connection_models": {},
-                        "devices": {
-                            "dc_generator": {
-                                "device": "dc_generator",
-                                "delay": resolution,
-                                "weight": 1.0,
-                                "amplitude": 200,  # Low enough so the neuron does not spike
-                                "start": 50,
-                                "stop": 60,
-                                "targetting": {
-                                    "strategy": "cell_model",
-                                    "cell_models": ["A"],
-                                },
-                            },
-                            "voltmeter_A": {
-                                "device": "multimeter",
-                                "delay": resolution,
-                                "properties": ["V_m"],
-                                "units": ["mV"],
-                                "targetting": {
-                                    "strategy": "cell_model",
-                                    "cell_models": ["A"],
-                                },
-                            },
+                    },
+                    "voltmeter_A": {
+                        "device": "multimeter",
+                        "delay": resolution,
+                        "properties": ["V_m"],
+                        "units": ["mV"],
+                        "targetting": {
+                            "strategy": "cell_model",
+                            "cell_models": ["A"],
                         },
-                    }
+                    },
                 },
             }
-        )
-
+        }
         netw = Scaffold(cfg, self.storage)
         netw.compile()
         results = netw.run_simulation("test")
@@ -375,54 +361,38 @@ class TestNest(
         nest.Simulate(1000.0)
         spike_times_nest = spikeA.get("events")["times"]
 
-        conf = {
-            "name": "test",
-            "storage": {"engine": "hdf5"},
-            "network": {"x": 1, "y": 1, "z": 1},
-            "partitions": {"B": {"type": "layer", "thickness": 1}},
-            "cell_types": {"A": {"spatial": {"radius": 1, "count": 1}}},
-            "placement": {
-                "placement_A": {
-                    "strategy": "bsb.placement.strategy.FixedPositions",
-                    "cell_types": ["A"],
-                    "partitions": ["B"],
-                    "positions": [[1, 1, 1]],
-                }
-            },
-            "connectivity": {},
-            "after_connectivity": {},
-            "simulations": {
-                "test": {
-                    "simulator": "nest",
-                    "duration": 1000,
-                    "resolution": 0.1,
-                    "seed": 1234,
-                    "cell_models": {
-                        "A": {
-                            "model": "gif_cond_exp",
-                            "constants": {
-                                "I_e": 200.0,
-                                "V_m": {
-                                    "distribution": "normal",
-                                    "mean": -70,
-                                    "std": 20.0,
-                                },
+        conf = _conf_single_cell()
+        conf.simulations = {
+            "test": {
+                "simulator": "nest",
+                "duration": 1000,
+                "resolution": 0.1,
+                "seed": 1234,
+                "cell_models": {
+                    "A": {
+                        "model": "gif_cond_exp",
+                        "constants": {
+                            "I_e": 200.0,
+                            "V_m": {
+                                "distribution": "normal",
+                                "mean": -70,
+                                "std": 20.0,
                             },
-                        }
-                    },
-                    "connection_models": {},
-                    "devices": {
-                        "record_A_spikes": {
-                            "device": "spike_recorder",
-                            "delay": 0.5,
-                            "targetting": {
-                                "strategy": "cell_model",
-                                "cell_models": ["A"],
-                            },
-                        }
-                    },
-                }
-            },
+                        },
+                    }
+                },
+                "connection_models": {},
+                "devices": {
+                    "record_A_spikes": {
+                        "device": "spike_recorder",
+                        "delay": 0.5,
+                        "targetting": {
+                            "strategy": "cell_model",
+                            "cell_models": ["A"],
+                        },
+                    }
+                },
+            }
         }
         cfg = Configuration(conf)
         netw = Scaffold(cfg, self.storage)
@@ -481,3 +451,114 @@ class TestNest(
         }
         with self.assertRaises(CastError):
             Configuration(conf)
+
+    def test_receptor_types(self):
+        duration = 100
+        resolution = 0.1
+        cfg = _conf_single_cell()
+        cfg.simulations = {
+            "test": {
+                "simulator": "nest",
+                "duration": duration,
+                "resolution": resolution,
+                "seed": 1234,
+                "cell_models": {
+                    "A": {
+                        "model": "aeif_cond_alpha_multisynapse",
+                        "constants": {
+                            "V_reset": -70.6,  # V_m, E_L and V_reset are the same
+                            "a": 0,  # Deactivate adaptation
+                            "b": 0,
+                            "E_rev": [0.0, -80.0],  # Create 2 postsynaptic receptors
+                            "tau_syn": [4.0, 2.0],
+                        },
+                    }
+                },
+                "connection_models": {},
+                "devices": {
+                    "spike_gen1": {
+                        "device": "poisson_generator",
+                        "delay": resolution,
+                        "weight": 10.0,
+                        "rate": 300,  # ~3 spikes during stim interval
+                        "start": 50.0,
+                        "stop": 60.0,
+                        "receptor_type": 1,
+                        "targetting": {
+                            "strategy": "cell_model",
+                            "cell_models": ["A"],
+                        },
+                    },
+                    "spike_gen2": {  # test other receptor_type
+                        "device": "poisson_generator",
+                        "delay": resolution,
+                        "weight": 10.0,
+                        "rate": 300,  # ~3 spikes during stim interval
+                        "start": 90.0,  # leave some time to rest between stims
+                        "receptor_type": 2,
+                        "targetting": {
+                            "strategy": "cell_model",
+                            "cell_models": ["A"],
+                        },
+                    },
+                    "voltmeter_A": {
+                        "device": "multimeter",
+                        "delay": resolution,
+                        "properties": ["V_m"],
+                        "units": ["mV"],
+                        "targetting": {
+                            "strategy": "cell_model",
+                            "cell_models": ["A"],
+                        },
+                    },
+                },
+            }
+        }
+        netw = Scaffold(cfg, self.storage)
+        netw.compile()
+        results = netw.run_simulation("test")
+        v_ms = np.array(results.analogsignals[0])[:, 0]
+        self.assertAll(v_ms[: int(50 / resolution) + 1] + 70.6 < 1e-3)
+        self.assertAll(
+            v_ms[int(50 / resolution) + 1 : int(60 / resolution) + 1] >= -70.6,
+            "First Poisson stimulus should raise membrane potential",
+        )
+        self.assertAll(
+            v_ms[int(90 / resolution) + 1 :] <= v_ms[int(90 / resolution) + 1],
+            "Second Poisson stimulus should lower membrane potential",
+        )
+
+    def test_error_receptor_type(self):
+        duration = 100
+        resolution = 0.1
+        cfg = _conf_single_cell()
+        cfg.simulations = {
+            "test": {
+                "simulator": "nest",
+                "duration": duration,
+                "resolution": resolution,
+                "cell_models": {
+                    "A": {
+                        "model": "aeif_cond_alpha_multisynapse",
+                    },
+                },
+                "connection_models": {},
+                "devices": {
+                    "spike_gen1": {
+                        "device": "poisson_generator",
+                        "weight": 1.0,
+                        "delay": resolution,
+                        "rate": 10.0,
+                        "receptor_type": 2,  # should fail
+                        "targetting": {
+                            "strategy": "cell_model",
+                            "cell_models": ["A"],
+                        },
+                    },
+                },
+            }
+        }
+        netw = Scaffold(cfg, self.storage)
+        netw.compile()
+        with self.assertRaises(NESTErrors.IncompatibleReceptorType):
+            results = netw.run_simulation("test")
