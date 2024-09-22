@@ -9,6 +9,7 @@ from bsb.core import Scaffold
 from bsb.services import MPI
 from bsb_test import NumpyTestCase, RandomStorageFixture, get_test_config
 from nest.lib.hl_api_exceptions import NESTErrors
+from scipy.optimize import curve_fit
 
 
 def _conf_single_cell():
@@ -562,3 +563,78 @@ class TestNest(
         netw.compile()
         with self.assertRaises(NESTErrors.IncompatibleReceptorType):
             results = netw.run_simulation("test")
+
+    def test_sinusoidal_poisson_generator(self):
+        duration = 100
+        resolution = 0.1
+        cfg = _conf_single_cell()
+        cfg.simulations = {
+            "test": {
+                "simulator": "nest",
+                "duration": duration,
+                "resolution": resolution,
+                "seed": 1234,
+                "cell_models": {
+                    "A": {
+                        "model": "iaf_cond_alpha",
+                        "constants": {
+                            "V_reset": -70,  # V_m, E_L and V_reset are the same
+                        },
+                    }
+                },
+                "connection_models": {},
+                "devices": {},
+            }
+        }
+        dict_spike_gen = {
+            "device": "sinusoidal_poisson_generator",
+            "delay": resolution,
+            "weight": 1.0,
+            "rate": 1000.0,  # ~ 100 spikes during sim.
+            "amplitude": 1000,
+            "frequency": 20,  # 2 periods during sim.
+            "phase": 2,
+            "targetting": {
+                "strategy": "cell_model",
+                "cell_models": ["A"],
+            },
+        }
+        nb_gen = 100
+        for i in range(nb_gen):  # Add multiple generators to check randomness
+            cfg.simulations["test"].devices[f"spike_gen{i}"] = dict_spike_gen
+        netw = Scaffold(cfg, self.storage)
+        netw.compile()
+
+        results = netw.run_simulation("test")
+        spike_times = np.array(np.concatenate(results.spiketrains))
+        self.assertAlmostEqual(
+            100 * nb_gen,
+            len(spike_times),
+            delta=nb_gen,
+            msg="Roughly 100 spikes produced per generator",
+        )
+        counts, bins = np.histogram(
+            spike_times, bins=np.linspace(0, 100, 101, endpoint=True)
+        )
+
+        def fit_sinus(x, y):
+            # perform a first guess with Fourier
+            ff = np.fft.fftfreq(len(x), (x[1] - x[0]))
+            Fy = abs(np.fft.fft(y))
+            guess_freq = abs(ff[np.argmax(Fy[1:]) + 1])  # don't take fr=0.
+            guess_amp = np.sqrt(np.std(y) * 2.0)
+            guess_offset = np.mean(y)
+            guess = np.array([guess_amp, guess_freq, 0.0, guess_offset])
+            # actual fit
+            params, covariance = curve_fit(
+                lambda t, f, a, p, b: a * np.sin(2 * np.pi * f * t + p) + b,
+                x,
+                y,
+                p0=guess,
+            )
+            return params
+
+        params = fit_sinus(bins[:-1] / 1e3, counts)
+        self.assertAlmostEqual(20, params[0], delta=0.2)
+        self.assertAlmostEqual(nb_gen, params[1], delta=2)
+        self.assertAlmostEqual(nb_gen, params[3], delta=1)
