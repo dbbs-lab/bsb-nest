@@ -23,6 +23,13 @@ class SinusoidalPoissonGenerator(
     """Deactivation time in ms. 
         If not specified, generator will last until the end of the simulation."""
 
+    def boot(self):
+        if self.stop is not None:
+            if self.stop <= self.start:
+                raise ConfigurationError(
+                    f"Stop time (given: {self.stop}) must be greater than start time (given: {self.start})."
+                )
+
     def implement(self, adapter, simulation, simdata):
         nodes = self.get_target_nodes(adapter, simulation, simdata)
         params = {
@@ -32,7 +39,7 @@ class SinusoidalPoissonGenerator(
             "frequency": self.frequency,
             "phase": self.phase,
         }
-        if self.stop is not None and self.stop > self.start:
+        if self.stop is not None:
             params["stop"] = self.stop
         device = self.register_device(
             simdata, nest.Create("sinusoidal_poisson_generator", params=params)

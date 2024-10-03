@@ -638,3 +638,44 @@ class TestNest(
         self.assertAlmostEqual(20, params[0], delta=0.2)
         self.assertAlmostEqual(nb_gen, params[1], delta=2)
         self.assertAlmostEqual(nb_gen, params[3], delta=1)
+
+    def test_error_sinusoidal_poisson_generator(self):
+        duration = 100
+        resolution = 0.1
+        cfg = _conf_single_cell()
+        cfg.simulations = {
+            "test": {
+                "simulator": "nest",
+                "duration": duration,
+                "resolution": resolution,
+                "seed": 1234,
+                "cell_models": {
+                    "A": {
+                        "model": "iaf_cond_alpha",
+                        "constants": {
+                            "V_reset": -70,  # V_m, E_L and V_reset are the same
+                        },
+                    }
+                },
+                "connection_models": {},
+                "devices": {
+                    "dict_spike_gen": {
+                        "device": "sinusoidal_poisson_generator",
+                        "delay": resolution,
+                        "weight": 1.0,
+                        "rate": 1000.0,
+                        "amplitude": 1000,
+                        "frequency": 20,
+                        "start": 10.0,
+                        "stop": 10.0,
+                        "phase": 2,
+                        "targetting": {
+                            "strategy": "cell_model",
+                            "cell_models": ["A"],
+                        },
+                    }
+                },
+            }
+        }
+        with self.assertRaises(ConfigurationError):
+            Scaffold(cfg, self.storage)
