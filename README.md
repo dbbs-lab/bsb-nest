@@ -1,4 +1,4 @@
-[![Build Status](https://github.com/dbbs-lab/bsb-nest/actions/workflows/build.yml/badge.svg)](https://github.com/dbbs-lab/bsb-nest/actions/workflows/build.yml)
+[![Build Status](https://github.com/dbbs-lab/bsb-nest/actions/workflows/main.yml/badge.svg)](https://github.com/dbbs-lab/bsb-nest/actions/workflows/main.yml)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 # bsb-nest

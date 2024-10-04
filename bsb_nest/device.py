@@ -21,6 +21,8 @@ class NestDevice(DeviceModel):
         type=types.or_(Targetting, NestRule), default=dict, call_default=True
     )
     """Targets of the device, which should be either a population or a nest rule"""
+    receptor_type = config.attr(type=int, required=False, default=0)
+    """Integer ID of the postsynaptic target receptor"""
 
     def get_target_nodes(self, adapter, simulation, simdata):
         if isinstance(self.targetting, Targetting):
@@ -43,8 +45,13 @@ class NestDevice(DeviceModel):
                 nest.Connect(
                     device,
                     nodes,
-                    syn_spec={"weight": self.weight, "delay": self.delay},
+                    syn_spec={
+                        "weight": self.weight,
+                        "delay": self.delay,
+                        "receptor_type": self.receptor_type,
+                    },
                 )
+
             except Exception as e:
                 if "does not send output" not in str(e):
                     raise

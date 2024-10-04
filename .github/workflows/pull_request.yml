@@ -1,11 +1,13 @@
-name: Validate Pull Request
+name: Validate Pull Request Name
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, edited]
+    types: [edited]
 
 jobs:
   validate-pr-title:
+    # Trigger only for local PR when PR is edited (title, description, etc.)
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ubuntu-latest
     steps:
       - name: PR Conventional Commit Validation

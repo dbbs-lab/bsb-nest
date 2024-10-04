@@ -16,6 +16,7 @@ jobs:
   tag_release:
     needs: [isort, black, build]
     runs-on: ubuntu-latest
+    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}  # if the repo is the main one.
     outputs:
       tag: ${{ steps.semver.outputs.next }}
       old_tag: ${{ steps.semver.outputs.current }}
@@ -42,7 +43,7 @@ jobs:
           branch: main
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v5
         with:
           python-version: 3.11
 
@@ -55,7 +56,7 @@ jobs:
           bump-my-version replace --current-version=${oldv:1} --new-version=${newv:1} pyproject.toml
 
       - name: Commit & Push version change
-        uses: stefanzweifel/git-auto-commit-action@v4
+        uses: stefanzweifel/git-auto-commit-action@v5
         with:
           branch: main
           commit_message: 'docs: bump version: ${{ steps.semver.outputs.current }} → ${{ steps.semver.outputs.next }} [skip ci]'
@@ -108,7 +109,7 @@ jobs:
           token: ${{ steps.app-token.outputs.token }}
 
       - name: Commit CHANGELOG.md
-        uses: stefanzweifel/git-auto-commit-action@v4
+        uses: stefanzweifel/git-auto-commit-action@v5
         with:
           branch: main
           commit_message: 'docs: update CHANGELOG.md for ${{ github.ref_name }} [skip ci]'
