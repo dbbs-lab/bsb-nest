@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   isort:
@@ -16,7 +17,8 @@ jobs:
   tag_release:
     needs: [isort, black, build]
     runs-on: ubuntu-latest
-    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}  # if the repo is the main one.
+    # if the repo is the main one or is triggered manually.
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository }}
     outputs:
       tag: ${{ steps.semver.outputs.next }}
       old_tag: ${{ steps.semver.outputs.current }}
