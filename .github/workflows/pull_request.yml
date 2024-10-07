@@ -2,7 +2,7 @@ name: Validate Pull Request Name
 
 on:
   pull_request:
-    types: [edited]
+    types: [edited, opened, reopened]
 
 jobs:
   validate-pr-title:
