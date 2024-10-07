@@ -46,7 +46,7 @@ profile = "black"
 known_third_party = ["nest"]
 
 [tool.bumpversion]
-current_version = "4.2.1"
+current_version = "4.3.0"
 parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)"
 serialize = ["{major}.{minor}.{patch}"]
 search = "{current_version}"
