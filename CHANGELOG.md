@@ -1,3 +1,12 @@
+## [v4.3.0] - 2024-10-07
+### :sparkles: New Features
+- [`8e4908a`](https://github.com/dbbs-lab/bsb-nest/commit/8e4908a13c1cc0c0b02cb80992f226a56981814f) - add sinusoidal generator and receptor_type attr *(PR [#12](https://github.com/dbbs-lab/bsb-nest/pull/12) by [@marialauradeg98](https://github.com/marialauradeg98))*
+
+### :bug: Bug Fixes
+- [`f2b58a6`](https://github.com/dbbs-lab/bsb-nest/commit/f2b58a63b98e7c81d25028d0f2c28d3bf342d7a3) - modify condition to manually bump version with GHA. *(PR [#14](https://github.com/dbbs-lab/bsb-nest/pull/14) by [@filimarc](https://github.com/filimarc))*
+- [`e31f7f9`](https://github.com/dbbs-lab/bsb-nest/commit/e31f7f9c75088bd185d81be0994601e141930149) - remove condition on main GHA *(commit by [@drodarie](https://github.com/drodarie))*
+
+
 ## [v4.2.1] - 2024-08-14
 ### :bug: Bug Fixes
 - [`250b5c7`](https://github.com/dbbs-lab/bsb-nest/commit/250b5c757089bf02e88ab2b34250cb152a4816d6) - Empty connection sets *(PR [#10](https://github.com/dbbs-lab/bsb-nest/pull/10) by [@drodarie](https://github.com/drodarie))*
@@ -21,3 +30,4 @@
 **Full Changelog**: https://github.com/dbbs-lab/bsb-nest/compare/v4.0.0...v4.1.0
 [v4.2.0]: https://github.com/dbbs-lab/bsb-nest/compare/v4.1.0...v4.2.0
 [v4.2.1]: https://github.com/dbbs-lab/bsb-nest/compare/v4.2.0...v4.2.1
+[v4.3.0]: https://github.com/dbbs-lab/bsb-nest/compare/v4.2.1...v4.3.0
