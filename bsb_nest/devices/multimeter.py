@@ -1,4 +1,5 @@
 import nest
+import numpy as np
 import quantities as pq
 from bsb import ConfigurationError, _util, config, types
 from neo import AnalogSignal
@@ -39,14 +40,16 @@ class Multimeter(NestDevice, classmap_entry="multimeter"):
 
         def recorder(segment):
             for prop, unit in zip(self.properties, self.units):
-                segment.analogsignals.append(
-                    AnalogSignal(
-                        device.events[prop],
-                        units=pq.units.__dict__[unit],
-                        sampling_period=self.simulation.resolution * pq.ms,
-                        name=self.name,
-                        senders=device.events["senders"],
+                for sender in np.unique(device.events["senders"]):
+                    cell_events = np.where(device.events["senders"] == sender)
+                    segment.analogsignals.append(
+                        AnalogSignal(
+                            device.events[prop][cell_events],
+                            units=pq.units.__dict__[unit],
+                            sampling_period=self.simulation.resolution * pq.ms,
+                            name=self.name,
+                            cell_id=sender,
+                        )
                     )
-                )
 
         simdata.result.create_recorder(recorder)
