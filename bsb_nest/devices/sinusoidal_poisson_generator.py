@@ -1,5 +1,5 @@
 import nest
-from bsb import config
+from bsb import ConfigurationError, config
 from neo import SpikeTrain
 
 from ..device import NestDevice
@@ -56,6 +56,7 @@ class SinusoidalPoissonGenerator(
                     senders=sr.events["senders"],
                     t_stop=simulation.duration,
                     device=self.name,
+                    pop_size=len(nodes),
                 )
             )
 

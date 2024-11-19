@@ -1,4 +1,5 @@
 import nest
+import numpy as np
 import quantities as pq
 from bsb import ConfigurationError, _util, config, types
 from neo import AnalogSignal
@@ -24,7 +25,9 @@ class Multimeter(NestDevice, classmap_entry="multimeter"):
 
     def implement(self, adapter, simulation, simdata):
 
-        nodes = self.get_target_nodes(adapter, simulation, simdata)
+        targets_dict = self.get_dict_targets(adapter, simulation, simdata)
+        nodes = self._flatten_nodes_ids(targets_dict)
+        inv_targets = self._invert_targets_dict(targets_dict)
         device = self.register_device(
             simdata,
             nest.Create(
@@ -38,15 +41,20 @@ class Multimeter(NestDevice, classmap_entry="multimeter"):
         self.connect_to_nodes(device, nodes)
 
         def recorder(segment):
-            for prop, unit in zip(self.properties, self.units):
-                segment.analogsignals.append(
-                    AnalogSignal(
-                        device.events[prop],
-                        units=pq.units.__dict__[unit],
-                        sampling_period=self.simulation.resolution * pq.ms,
-                        name=self.name,
-                        senders=device.events["senders"],
+            senders = device.events["senders"]
+            for sender in np.unique(senders):
+                sender_filter = senders == sender
+                for prop, unit in zip(self.properties, self.units):
+                    segment.analogsignals.append(
+                        AnalogSignal(
+                            device.events[prop][sender_filter],
+                            units=pq.units.__dict__[unit],
+                            sampling_period=self.simulation.resolution * pq.ms,
+                            name=self.name,
+                            cell_type=inv_targets[sender],
+                            cell_id=sender,
+                            prop_recorded=prop,
+                        )
                     )
-                )
 
         simdata.result.create_recorder(recorder)
