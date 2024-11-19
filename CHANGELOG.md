@@ -28,6 +28,7 @@
 * @drodarie made their first contribution in https://github.com/dbbs-lab/bsb-nest/pull/7
 
 **Full Changelog**: https://github.com/dbbs-lab/bsb-nest/compare/v4.0.0...v4.1.0
+
 [v4.2.0]: https://github.com/dbbs-lab/bsb-nest/compare/v4.1.0...v4.2.0
 [v4.2.1]: https://github.com/dbbs-lab/bsb-nest/compare/v4.2.0...v4.2.1
 [v4.3.0]: https://github.com/dbbs-lab/bsb-nest/compare/v4.2.1...v4.3.0

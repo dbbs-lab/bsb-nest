@@ -25,7 +25,9 @@ class Multimeter(NestDevice, classmap_entry="multimeter"):
 
     def implement(self, adapter, simulation, simdata):
 
-        nodes = self.get_target_nodes(adapter, simulation, simdata)
+        targets_dict = self.get_dict_targets(adapter, simulation, simdata)
+        nodes = self._flatten_nodes_ids(targets_dict)
+        inv_targets = self._invert_targets_dict(targets_dict)
         device = self.register_device(
             simdata,
             nest.Create(
@@ -39,16 +41,19 @@ class Multimeter(NestDevice, classmap_entry="multimeter"):
         self.connect_to_nodes(device, nodes)
 
         def recorder(segment):
-            for prop, unit in zip(self.properties, self.units):
-                for sender in np.unique(device.events["senders"]):
-                    cell_events = np.where(device.events["senders"] == sender)
+            senders = device.events["senders"]
+            for sender in np.unique(senders):
+                sender_filter = senders == sender
+                for prop, unit in zip(self.properties, self.units):
                     segment.analogsignals.append(
                         AnalogSignal(
-                            device.events[prop][cell_events],
+                            device.events[prop][sender_filter],
                             units=pq.units.__dict__[unit],
                             sampling_period=self.simulation.resolution * pq.ms,
                             name=self.name,
+                            cell_type=inv_targets[sender],
                             cell_id=sender,
+                            prop_recorded=prop,
                         )
                     )
 

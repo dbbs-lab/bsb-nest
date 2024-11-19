@@ -35,6 +35,7 @@ class PoissonGenerator(NestDevice, classmap_entry="poisson_generator"):
                     senders=sr.events["senders"],
                     t_stop=simulation.duration,
                     device=self.name,
+                    pop_size=len(nodes),
                 )
             )
 
