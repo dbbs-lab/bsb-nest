@@ -1,10 +1,12 @@
+import typing
 import warnings
 
 import nest
 from bsb import DeviceModel, SimulationData, Targetting, config, refs, types
 
-from .adapter import NestAdapter
-from .simulation import NestSimulation
+if typing.TYPE_CHECKING:
+    from .adapter import NestAdapter
+    from .simulation import NestSimulation
 
 
 @config.node
