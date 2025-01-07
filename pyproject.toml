@@ -9,7 +9,7 @@ readme = "README.md"
 license = {file = "LICENSE"}
 classifiers = ["License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"]
 dynamic = ["version", "description"]
-dependencies = ["bsb-core~=4.1"]
+dependencies = ["bsb-core~=5.0"]
 
 [tool.flit.module]
 name = "bsb_nest"
@@ -22,7 +22,7 @@ parallel = ["bsb-core[parallel]"]
 test = [
     "bsb-core[parallel]",
     "bsb-test~=4.0",
-    "bsb-hdf5~=4.0",
+    "bsb-hdf5~=5.0",
     # Required to load the Brunel config file
     "bsb-arbor~=4.0",
     "coverage~=7.0"

@@ -3,7 +3,7 @@
 
 # bsb-nest
 
-bsb-nest is a pluggin of [BSB](https://github.com/dbbs-lab/bsb) (see also 
+bsb-nest is a plugin of the [BSB](https://github.com/dbbs-lab/bsb) (see also 
 [bsb-core](https://github.com/dbbs-lab/bsb-core)). 
 It contains the interfaces and tools to simulate BSB circuit with the 
 [NEST simulator](https://www.nest-simulator.org/).
