@@ -13,7 +13,7 @@ jobs:
   build:
     uses: ./.github/workflows/build.yml
 
-  tag_release:
+  bump:
     needs: [isort, black, build]
     runs-on: ubuntu-latest
     outputs:
@@ -40,6 +40,26 @@ jobs:
         with:
           token: ${{ steps.app-token.outputs.token }}
           branch: main
+          noVersionBumpBehavior: warn
+
+  tag_release:
+    needs: [ bump ]
+    # Skip job in case no version bump is required
+    # in this case the variable tag will not be set by semver
+    if: ${{ needs.bump.outputs.tag != ''}}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create Github token
+        uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ vars.DBBS_APP_ID }}
+          private-key: ${{ secrets.DBBS_APP_PRIVATE_KEY }}
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ steps.app-token.outputs.token }}
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
@@ -49,8 +69,8 @@ jobs:
       - name: Bump version in Python project
         run: |
           pip install --upgrade pip bump-my-version
-          oldv="${{ steps.semver.outputs.current }}"
-          newv="${{steps.semver.outputs.next}}"
+          oldv="${{ needs.bump.outputs.old_tag }}"
+          newv="${{needs.bump.outputs.tag}}"
           # Bump the version, dropping the leading `v` with `${x:1}`
           bump-my-version replace --current-version=${oldv:1} --new-version=${newv:1} pyproject.toml
 
@@ -58,17 +78,17 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           branch: main
-          commit_message: 'docs: bump version: ${{ steps.semver.outputs.current }} → ${{ steps.semver.outputs.next }} [skip ci]'
+          commit_message: 'docs: bump version: ${{ needs.bump.outputs.old_tag }} → ${{ needs.bump.outputs.tag }} [skip ci]'
 
       - name: Create tag
         uses: rickstaa/action-create-tag@v1
         with:
-          tag: ${{ steps.semver.outputs.next }}
+          tag: ${{ needs.bump.outputs.tag }}
           github_token: ${{ steps.app-token.outputs.token }}
 
   release:
     runs-on: ubuntu-latest
-    needs: tag_release
+    needs: [bump, tag_release]
 
     steps:
       - name: Create Github token
@@ -93,8 +113,8 @@ jobs:
         uses: requarks/changelog-action@v1
         with:
           token: ${{ steps.app-token.outputs.token }}
-          fromTag: ${{ needs.tag_release.outputs.tag }}
-          toTag: ${{ needs.tag_release.outputs.old_tag }}
+          fromTag: ${{ needs.bump.outputs.tag }}
+          toTag: ${{ needs.bump.outputs.old_tag }}
 
       - name: Create Release
         uses: ncipollo/release-action@v1.12.0
@@ -102,8 +122,8 @@ jobs:
           allowUpdates: true
           draft: false
           makeLatest: true
-          tag: ${{ needs.tag_release.outputs.tag }}
-          name: ${{ needs.tag_release.outputs.tag }}
+          tag: ${{ needs.bump.outputs.tag }}
+          name: ${{ needs.bump.outputs.tag }}
           body: ${{ steps.changelog.outputs.changes }}
           token: ${{ steps.app-token.outputs.token }}
 
