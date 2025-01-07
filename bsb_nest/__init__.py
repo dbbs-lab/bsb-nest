@@ -9,4 +9,4 @@ from .adapter import NestAdapter
 from .simulation import NestSimulation
 
 __plugin__ = SimulationBackendPlugin(Simulation=NestSimulation, Adapter=NestAdapter)
-__version__ = "4.3.1"
+__version__ = "4.3.2"
