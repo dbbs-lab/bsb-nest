@@ -53,7 +53,7 @@ class SinusoidalPoissonGenerator(
                 SpikeTrain(
                     sr.events["times"],
                     units="ms",
-                    senders=sr.events["senders"],
+                    array_annotations={"senders": sr.events["senders"]},
                     t_stop=simulation.duration,
                     device=self.name,
                     pop_size=len(nodes),

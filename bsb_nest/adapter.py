@@ -32,7 +32,7 @@ class NestResult(SimulationResult):
             segment.spiketrains.append(
                 SpikeTrain(
                     events["times"],
-                    waveforms=events["senders"],
+                    array_annotations={"senders": events["senders"]},
                     t_stop=nest.biological_time,
                     units="ms",
                     **annotations,
