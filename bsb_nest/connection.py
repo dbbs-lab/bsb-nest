@@ -4,7 +4,7 @@ import sys
 import nest
 import numpy as np
 import psutil
-from bsb import MPI, ConnectionModel, compose_nodes, config, types
+from bsb import ConnectionModel, compose_nodes, config, types
 from tqdm import tqdm
 
 from .distributions import nest_parameter
@@ -53,7 +53,7 @@ class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
     tag = config.attr(type=str)
     synapse = config.attr(type=NestSynapseSettings, required=True)
 
-    def create_connections(self, simdata, pre_nodes, post_nodes, cs):
+    def create_connections(self, simdata, pre_nodes, post_nodes, cs, comm):
         import nest
 
         syn_spec = self.get_syn_spec()
@@ -64,11 +64,11 @@ class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
         if self.rule is not None:
             nest.Connect(pre_nodes, post_nodes, self.get_conn_spec(), syn_spec)
         else:
-            MPI.barrier()
+            comm.barrier()
             for pre_locs, post_locs in self.predict_mem_iterator(
-                pre_nodes, post_nodes, cs
+                pre_nodes, post_nodes, cs, comm
             ):
-                MPI.barrier()
+                comm.barrier()
                 if len(pre_locs) == 0 or len(post_locs) == 0:
                     continue
                 cell_pairs, multiplicity = np.unique(
@@ -89,36 +89,36 @@ class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
                     ssw,
                     return_synapsecollection=False,
                 )
-            MPI.barrier()
+            comm.barrier()
         return LazySynapseCollection(pre_nodes, post_nodes)
 
-    def predict_mem_iterator(self, pre_nodes, post_nodes, cs):
+    def predict_mem_iterator(self, pre_nodes, post_nodes, cs, comm):
         avmem = psutil.virtual_memory().available
         predicted_all_mem = (
             len(pre_nodes) * 8 * 2 + len(post_nodes) * 8 * 2 + len(cs) * 6 * 8 * (16 + 2)
-        ) * MPI.get_size()
+        ) * comm.get_size()
         n_chunks = len(cs.get_local_chunks("out"))
         predicted_local_mem = (predicted_all_mem / n_chunks) if n_chunks > 0 else 0.0
         if predicted_local_mem > avmem / 2:
             # Iterate block-by-block
-            return self.block_iterator(cs)
+            return self.block_iterator(cs, comm)
         elif predicted_all_mem > avmem / 2:
             # Iterate local hyperblocks
-            return self.local_iterator(cs)
+            return self.local_iterator(cs, comm)
         else:
             # Iterate all
             return (cs.load_connections().as_globals().all(),)
 
-    def block_iterator(self, cs):
+    def block_iterator(self, cs, comm):
         locals = cs.get_local_chunks("out")
 
         def block_iter():
             iter = locals
-            if MPI.get_rank() == 0:
+            if comm.get_rank() == 0:
                 iter = tqdm(iter, desc="hyperblocks", file=sys.stdout)
             for local in iter:
                 inner_iter = cs.load_connections().as_globals().from_(local)
-                if MPI.get_rank() == 0:
+                if comm.get_rank() == 0:
                     yield from tqdm(
                         inner_iter,
                         desc="blocks",
@@ -131,9 +131,9 @@ class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
 
         return block_iter()
 
-    def local_iterator(self, cs):
+    def local_iterator(self, cs, comm):
         iter = cs.get_local_chunks("out")
-        if MPI.get_rank() == 0:
+        if comm.get_rank() == 0:
             iter = tqdm(iter, desc="hyperblocks", file=sys.stdout)
         yield from (
             cs.load_connections().as_globals().from_(local).all() for local in iter
