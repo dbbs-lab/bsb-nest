@@ -42,18 +42,18 @@ class NestResult(SimulationResult):
 
 
 class NestAdapter(SimulatorAdapter):
-    def __init__(self):
-        self.simdata = dict()
+    def __init__(self, comm=None):
+        super().__init__(comm=comm)
         self.loaded_modules = set()
 
-    def simulate(self, simulation, comm=None):
+    def simulate(self, *simulations, post_prepare=None):
         try:
             self.reset_kernel()
-            return super().simulate(simulation, comm=comm)
+            return super().simulate(*simulations, post_prepare=post_prepare)
         finally:
             self.reset_kernel()
 
-    def prepare(self, simulation, comm=None):
+    def prepare(self, simulation):
         self.simdata[simulation] = SimulationData(
             simulation, result=NestResult(simulation)
         )
@@ -64,7 +64,7 @@ class NestAdapter(SimulatorAdapter):
             report("Creating neurons...", level=2)
             self.create_neurons(simulation)
             report("Creating connections...", level=2)
-            self.connect_neurons(simulation, comm=comm)
+            self.connect_neurons(simulation)
             report("Creating devices...", level=2)
             self.create_devices(simulation)
             return self.simdata[simulation]
@@ -78,7 +78,7 @@ class NestAdapter(SimulatorAdapter):
         # to appropriately warn them when they load them twice.
         self.loaded_modules = set()
 
-    def run(self, *simulations, comm=None):
+    def run(self, *simulations):
         unprepared = [sim for sim in simulations if sim not in self.simdata]
         if unprepared:
             raise AdapterError(f"Unprepared for simulations: {', '.join(unprepared)}")
@@ -127,13 +127,13 @@ class NestAdapter(SimulatorAdapter):
         for cell_model in simulation.cell_models.values():
             simdata.populations[cell_model] = cell_model.create_population(simdata)
 
-    def connect_neurons(self, simulation, comm):
+    def connect_neurons(self, simulation):
         """
         Connect the cells in NEST according to the connection model configurations
         """
         simdata = self.simdata[simulation]
         iter = simulation.connection_models.values()
-        if comm.get_rank() == 0:
+        if self.comm.get_rank() == 0:
             iter = tqdm(iter, desc="", file=sys.stdout)
         for connection_model in iter:
             try:
@@ -155,7 +155,7 @@ class NestAdapter(SimulatorAdapter):
             try:
                 simdata.connections[connection_model] = (
                     connection_model.create_connections(
-                        simdata, pre_nodes, post_nodes, cs, comm
+                        simdata, pre_nodes, post_nodes, cs, self.comm
                     )
                 )
             except Exception as e:
@@ -173,9 +173,9 @@ class NestAdapter(SimulatorAdapter):
         if simulation.seed is not None:
             nest.rng_seed = simulation.seed
 
-    def check_comm(self, comm):
-        if nest.NumProcesses() != comm.get_size():
+    def check_comm(self):
+        if nest.NumProcesses() != self.comm.get_size():
             raise RuntimeError(
-                f"NEST is managing {nest.NumProcesses()} processes, but {comm.get_size()}"
+                f"NEST is managing {nest.NumProcesses()} processes, but {self.comm.get_size()}"
                 " were detected. Please check your MPI setup."
             )
