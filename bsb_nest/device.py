@@ -1,3 +1,4 @@
+import abc
 import typing
 import warnings
 
@@ -107,6 +108,22 @@ class NestDevice(DeviceModel):
     def register_device(self, simdata, device):
         simdata.devices[self] = device
         return device
+
+    @abc.abstractmethod
+    def implement(
+        self,
+        adapter: "NestAdapter",
+        simulation: "NestSimulation",
+        simdata: "SimulationData",
+    ):
+        """
+        Create, connect and register the Nest device.
+
+        :param bsb_nest.NestAdapter adapter:
+        :param bsb_nest.NestSimulation simulation: Nest simulation instance
+        :param bsb.SimulationData simdata: Simulation data instance
+        """
+        pass
 
 
 @config.node
