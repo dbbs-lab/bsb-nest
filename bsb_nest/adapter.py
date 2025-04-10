@@ -3,7 +3,6 @@ import typing
 
 import nest
 from bsb import (
-    MPI,
     AdapterError,
     AdapterProgress,
     SimulationData,
@@ -32,7 +31,7 @@ class NestResult(SimulationResult):
             segment.spiketrains.append(
                 SpikeTrain(
                     events["times"],
-                    waveforms=events["senders"],
+                    array_annotations={"senders": events["senders"]},
                     t_stop=nest.biological_time,
                     units="ms",
                     **annotations,
@@ -43,18 +42,18 @@ class NestResult(SimulationResult):
 
 
 class NestAdapter(SimulatorAdapter):
-    def __init__(self):
-        self.simdata = dict()
+    def __init__(self, comm=None):
+        super().__init__(comm=comm)
         self.loaded_modules = set()
 
-    def simulate(self, simulation):
+    def simulate(self, *simulations, post_prepare=None):
         try:
             self.reset_kernel()
-            return super().simulate(simulation)
+            return super().simulate(*simulations, post_prepare=post_prepare)
         finally:
             self.reset_kernel()
 
-    def prepare(self, simulation, comm=None):
+    def prepare(self, simulation):
         self.simdata[simulation] = SimulationData(
             simulation, result=NestResult(simulation)
         )
@@ -79,7 +78,7 @@ class NestAdapter(SimulatorAdapter):
         # to appropriately warn them when they load them twice.
         self.loaded_modules = set()
 
-    def run(self, *simulations, comm=None):
+    def run(self, *simulations):
         unprepared = [sim for sim in simulations if sim not in self.simdata]
         if unprepared:
             raise AdapterError(f"Unprepared for simulations: {', '.join(unprepared)}")
@@ -134,7 +133,7 @@ class NestAdapter(SimulatorAdapter):
         """
         simdata = self.simdata[simulation]
         iter = simulation.connection_models.values()
-        if MPI.get_rank() == 0:
+        if self.comm.get_rank() == 0:
             iter = tqdm(iter, desc="", file=sys.stdout)
         for connection_model in iter:
             try:
@@ -156,7 +155,7 @@ class NestAdapter(SimulatorAdapter):
             try:
                 simdata.connections[connection_model] = (
                     connection_model.create_connections(
-                        simdata, pre_nodes, post_nodes, cs
+                        simdata, pre_nodes, post_nodes, cs, self.comm
                     )
                 )
             except Exception as e:
@@ -175,8 +174,8 @@ class NestAdapter(SimulatorAdapter):
             nest.rng_seed = simulation.seed
 
     def check_comm(self):
-        if nest.NumProcesses() != MPI.get_size():
+        if nest.NumProcesses() != self.comm.get_size():
             raise RuntimeError(
-                f"NEST is managing {nest.NumProcesses()} processes, but {MPI.get_size()}"
+                f"NEST is managing {nest.NumProcesses()} processes, but {self.comm.get_size()}"
                 " were detected. Please check your MPI setup."
             )

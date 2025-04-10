@@ -241,7 +241,7 @@ class TestNest(
         netw.compile()
         results = netw.run_simulation("test")
         spike_times_bsb = results.spiketrains[0]
-        self.assertTrue(np.unique(spike_times_bsb.annotations["senders"]) == 1)
+        self.assertTrue(np.unique(spike_times_bsb.array_annotations["senders"]) == 1)
         membrane_potentials = results.analogsignals[0]
         # last time point is not recorded because of recorder delay.
         self.assertTrue(len(membrane_potentials) == duration / resolution - 1)
