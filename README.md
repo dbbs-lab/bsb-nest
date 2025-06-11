@@ -1,5 +1,6 @@
-[![Build Status](https://github.com/dbbs-lab/bsb-nest/actions/workflows/main.yml/badge.svg)](https://github.com/dbbs-lab/bsb-nest/actions/workflows/main.yml)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+> [!NOTE]
+>
+> This repository has moved and is now maintained as a part of the [BSB monorepository](https://github.com/dbbs-lab/bsb).
 
 # bsb-nest
 
